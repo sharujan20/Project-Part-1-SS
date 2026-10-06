@@ -35,6 +35,12 @@ How to use this script:
 # sklearn.preprocessing), and PCA (from sklearn.decomposition).
 # Copilot prompt idea: "Import pandas, matplotlib, and the sklearn
 # tools needed for standardizing data and running PCA"
+import matplotlib
+matplotlib.use("Agg")
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 
 # TODO 2: Load the dataset.
@@ -42,6 +48,7 @@ How to use this script:
 # that missing values in this file are written as the text "NA".
 # Copilot prompt idea: "Read data/penguins.csv into a pandas
 # DataFrame, treating the string 'NA' as a missing value"
+penguins = pd.read_csv("data/penguins.csv", na_values="NA")
 
 
 # TODO 3: Drop incomplete rows.
@@ -49,6 +56,7 @@ How to use this script:
 # missing value so PCA doesn't fail on them.
 # Copilot prompt idea: "Drop rows with missing values from the
 # penguins DataFrame"
+penguins = penguins.dropna()
 
 
 # TODO 4: Select the numeric feature columns.
@@ -56,6 +64,7 @@ How to use this script:
 #   bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g
 # Copilot prompt idea: "Select these four numeric columns from
 # penguins into a new variable called features"
+features = penguins[["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]]
 
 
 # TODO 5: Standardize the features.
@@ -65,6 +74,8 @@ How to use this script:
 # variance 1.
 # Copilot prompt idea: "Standardize the features using
 # StandardScaler and store the result as features_scaled"
+scaler = StandardScaler()
+features_scaled = scaler.fit_transform(features)
 
 
 # TODO 6: Run PCA.
@@ -73,6 +84,8 @@ How to use this script:
 # every penguin.
 # Copilot prompt idea: "Fit a PCA model with 2 components on
 # features_scaled and get the transformed principal components"
+pca = PCA(n_components=2)
+principal_components = pca.fit_transform(features_scaled)
 
 
 # TODO 7: Put the results in a DataFrame.
@@ -81,6 +94,11 @@ How to use this script:
 # so it's easy to plot.
 # Copilot prompt idea: "Create a DataFrame called pca_df with
 # columns PC1, PC2, and species"
+pca_df = pd.DataFrame({
+    "PC1": principal_components[:, 0],
+    "PC2": principal_components[:, 1],
+    "species": penguins["species"].values,
+})
 
 
 # TODO 8: Plot and save the result.
@@ -92,12 +110,31 @@ How to use this script:
 # Copilot prompt idea: "Make a scatter plot of PC1 vs PC2 coloured
 # by species, with axis labels showing percent variance explained,
 # and save it to outputs/pca_scatter.png"
+from pathlib import Path
+
+output_dir = Path("outputs")
+output_dir.mkdir(exist_ok=True)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+for species in pca_df["species"].unique():
+    subset = pca_df[pca_df["species"] == species]
+    ax.scatter(subset["PC1"], subset["PC2"], label=species)
+
+ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0] * 100:.1f}% variance)")
+ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1] * 100:.1f}% variance)")
+ax.set_title("PCA of Penguin Body Measurements")
+ax.legend(title="Species")
+plt.tight_layout()
+plt.savefig(output_dir / "pca_scatter.png")
+plt.close(fig)
 
 
 # TODO 9 (optional stretch): print a short summary.
 # Print how much total variance the first two components explain
 # combined, and print the first few rows of pca_df to check your
 # work.
+print(f"Total variance explained by first two PCs: {pca.explained_variance_ratio_.sum() * 100:.1f}%")
+print(pca_df.head())
 
 
 # TODO 10 (optional stretch): Include the year column as a feature.
